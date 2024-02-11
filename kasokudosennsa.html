@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, 
+  maximum-scale=1.0, user-scalable=no" />
+  <style>
+    #huraretayo {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <button id="start-button">
+    センサの値を取得する
+  </button>
+
+  <div id="huraretayo" style="display:none">
+    デバイスが振られましたよ！！
+  </div>
+
+  <div id="result_acc"></div>
+
+  <script type="text/javascript">
+    const resultElement = document.getElementById("result_acc");
+    const huraretayoElement = document.getElementById("huraretayo");
+
+    let pastX = null;
+    let pastY = null;
+    let pastZ = null;
+
+    const handleDeviceMotion = (event) => {
+      const x = event.accelerationIncludingGravity.x;
+      const y = event.accelerationIncludingGravity.y;
+      const z = event.accelerationIncludingGravity.z;
+
+      // 加速度データを取るのが2回目以降なら、過去の加速度値と比較して揺れているかどうかを判定する
+      // pastXがnullではなければ、2回目以降とわかる（1回目の加速度取得でpastX, pastY, pastZに値が入るため）
+      if (pastX !== null) {
+        // どれかの値の差が 15 以上なら、揺れていると判定
+        if (Math.abs(pastX - x) >= 15 || Math.abs(pastY - y) >= 15 || Math.abs(pastZ - z) >= 15) {
+          huraretayoElement.style.display = "block";
+          setTimeout(() => {
+            huraretayoElement.style.display = "none";
+          }, 2000);
+
+           //効果音を再生
+           const sound = new Audio('party_poppers3.mp3');
+           sound.play(); 
+        }
+      }
+
+      resultElement.innerHTML = "重力加速度<br />" +
+        "X:" + x.toFixed(2) +"(m/s^2)<br />" +
+        "Y:" + y.toFixed(2) +"(m/s^2)<br />" + 
+        "Z:" + z.toFixed(2) +"(m/s^2)<br />";
+      
+      pastX = x;
+      pastY = y;
+      pastZ = z;
+    }
+
+    const requestDeviceMotionPermission = () => {
+        if (
+            DeviceMotionEvent &&
+            typeof DeviceMotionEvent.requestPermission === 'function'
+        ) {
+            // iOS 13+ の Safari
+            // 許可を取得
+            DeviceMotionEvent.requestPermission()
+                .then(permissionState => {
+                    if (permissionState === 'granted') {
+                        // 許可を得られた場合、devicemotionをイベントリスナーに追加
+                        window.addEventListener('devicemotion', handleDeviceMotion)
+                    } else {
+                        // 許可を得られなかった場合の処理
+                    }
+                })
+                .catch(console.error) // https通信でない場合などで許可を取得できなかった場合
+        } else {
+            window.addEventListener('devicemotion', handleDeviceMotion)
+        }
+    }
+
+    // ボタンクリックでrequestDeviceMotionPermission実行
+    const startButton = document.getElementById("start-button")
+    startButton.addEventListener('click', requestDeviceMotionPermission)
+  </script>
+</body>
+
+</html>
